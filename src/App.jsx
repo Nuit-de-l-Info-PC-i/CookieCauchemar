@@ -1,24 +1,30 @@
 import './App.css';
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
+import Boat from './Boat';
 
 function App() {
-    const [boatPosition, setBoatPosition] = useState({ x: 50, y: 50 });
     const [speed, setSpeed] = useState(1);
     const [requiredButton, setRequiredButton] = useState('left');
     const [wasteRemoved, setWasteRemoved] = useState(0);
+    const [totalClickCount, setTotalClickCount] = useState(0);
+    const [startTime] = useState(Date.now());
 
     useEffect(() => {
-        const moveBoat = () => {
-            setBoatPosition((pos) => ({
-                x: (pos.x + speed) % (window.innerWidth - 100),
-                y: (pos.y + speed) % (window.innerHeight - 100),
-            }));
-        };
+        const interval = setInterval(() => {
+            const now = Date.now();
+            const timeElapsed = (now - startTime) / 1000; // in seconds
+            const clicksPerSecond = totalClickCount / timeElapsed;
 
-        const interval = setInterval(moveBoat, 50);
+            // Adjust speed proportionnally based on clicks per second
+            setSpeed(1 + 8 * clicksPerSecond);
+        }, 100);
 
         return () => clearInterval(interval);
-    }, [speed]);
+    }, [totalClickCount, startTime]);
+
+    const getRandomButton = () => {
+        return Math.random() < 0.5 ? 'left' : 'right';
+    };
 
     const handleClick = (e) => {
         e.preventDefault();
@@ -26,9 +32,9 @@ function App() {
         const buttonClicked = e.type === 'click' ? 'left' : 'right';
 
         if (buttonClicked === requiredButton) {
-            setSpeed(speed + 1);
+            setTotalClickCount(totalClickCount + 1);
             setWasteRemoved(wasteRemoved + 1);
-            setRequiredButton(requiredButton === 'left' ? 'right' : 'left');
+            setRequiredButton(getRandomButton());
         }
     };
 
@@ -40,20 +46,7 @@ function App() {
                 Cliquez sur le bateau avec le bouton{' '}
                 <strong>{requiredButton === 'left' ? 'gauche' : 'droit'}</strong> de la souris !
             </p>
-            <img
-                src="/boat.png"
-                alt="Bateau"
-                style={{
-                    position: 'absolute',
-                    left: boatPosition.x,
-                    top: boatPosition.y,
-                    width: '100px',
-                    height: 'auto',
-                    cursor: 'pointer',
-                }}
-                onClick={handleClick}
-                onContextMenu={handleClick}
-            />
+            <Boat speed={speed} requiredButton={requiredButton} onBoatClick={handleClick} />
         </div>
     );
 }
